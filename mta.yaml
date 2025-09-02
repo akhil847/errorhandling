@@ -1,8 +1,125 @@
 _schema-version: 3.3.0
 ID: purchase_Order_CAP
+description: A simple CAP project.
 version: 1.0.0
-description: "A simple CAP project."
+modules:
+  - name: purchase_Order_CAP-srv
+    type: nodejs
+    path: gen/srv
+    requires:
+      - name: purchase_Order_CAP-auth
+      - name: purchase_Order_CAP-db
+    provides:
+      - name: srv-api
+        properties:
+          srv-url: ${default-url}
+    parameters:
+      buildpack: nodejs_buildpack
+      instances: 1
+    build-parameters:
+      builder: npm-ci
+  - name: purchase_Order_CAP-db-deployer
+    type: hdb
+    path: gen/db
+    requires:
+      - name: purchase_Order_CAP-db
+    parameters:
+      buildpack: nodejs_buildpack
+  - name: purchase_Order_CAP-app-content
+    type: com.sap.application.content
+    path: .
+    requires:
+      - name: purchase_Order_CAP-repo-host
+        parameters:
+          content-target: true
+    build-parameters:
+      build-result: resources
+      requires:
+        - artifacts:
+            - comapppoapp.zip
+          name: comapppoapp
+          target-path: resources/
+  - name: comapppoapp
+    type: html5
+    path: app/po_app
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm install
+        - npm run build:cf
+      supported-platforms:
+        []
+  - name: purchase_Order_CAP-destination-content
+    type: com.sap.application.content
+    requires:
+      - name: purchase_Order_CAP-destination-service
+        parameters:
+          content-target: true
+      - name: purchase_Order_CAP-repo-host
+        parameters:
+          service-key:
+            name: purchase_Order_CAP-repo-host-key
+      - name: purchase_Order_CAP-auth
+        parameters:
+          service-key:
+            name: purchase_Order_CAP-auth-key
+      - name: srv-api
+    parameters:
+      content:
+        instance:
+          destinations:
+            - Name: srv-api
+              URL: ~{srv-api/srv-url}
+              Authentication: OAuth2UserTokenExchange
+              ServiceInstanceName: purchase_Order_CAP-auth
+              ServiceKeyName: purchase_Order_CAP-auth-key
+              sap.cloud.service: po_app
+              HTML5.ForwardAuthToken: true
+            - Name: po_app_purchase_Order_CAP_repo_host
+              ServiceInstanceName: purchase_Order_CAP-html5-service
+              ServiceKeyName: purchase_Order_CAP-repo-host-key
+              sap.cloud.service: po_app
+            - Authentication: OAuth2UserTokenExchange
+              Name: po_app_purchase_Order_CAP_auth
+              ServiceInstanceName: purchase_Order_CAP-auth
+              ServiceKeyName: purchase_Order_CAP-auth-key
+              sap.cloud.service: po_app
+          existing_destinations_policy: update
+    build-parameters:
+      no-source: true
+resources:
+  - name: purchase_Order_CAP-auth
+    type: org.cloudfoundry.managed-service
+    parameters:
+      config:
+        tenant-mode: dedicated
+        xsappname: purchase_Order_CAP-${org}-${space}
+      path: ./xs-security.json
+      service: xsuaa
+      service-plan: application
+  - name: purchase_Order_CAP-db
+    type: com.sap.xs.hdi-container
+    parameters:
+      service: hana
+      service-plan: hdi-shared
+  - name: purchase_Order_CAP-repo-host
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-name: purchase_Order_CAP-html5-service
+      service-plan: app-host
+  - name: purchase_Order_CAP-destination-service
+    type: org.cloudfoundry.managed-service
+    parameters:
+      config:
+        HTML5Runtime_enabled: true
+        version: 1.0.0
+      service: destination
+      service-name: purchase_Order_CAP-destination-service
+      service-plan: lite
 parameters:
+  deploy_mode: html5-repo
   enable-parallel-deployments: true
 build-parameters:
   before-all:
@@ -10,43 +127,3 @@ build-parameters:
       commands:
         - npm ci
         - npx cds build --production
-modules:
-  - name: purchase_Order_CAP-srv
-    type: nodejs
-    path: gen/srv
-    parameters:
-      instances: 1
-      buildpack: nodejs_buildpack
-    build-parameters:
-      builder: npm-ci
-    provides:
-      - name: srv-api # required by consumers of CAP services (e.g. approuter)
-        properties:
-          srv-url: ${default-url}
-    requires:
-      - name: purchase_Order_CAP-auth
-      - name: purchase_Order_CAP-db
-
-  - name: purchase_Order_CAP-db-deployer
-    type: hdb
-    path: gen/db
-    parameters:
-      buildpack: nodejs_buildpack
-    requires:
-      - name: purchase_Order_CAP-db
-
-resources:
-  - name: purchase_Order_CAP-auth
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: xsuaa
-      service-plan: application
-      path: ./xs-security.json
-      config:
-        xsappname: purchase_Order_CAP-${org}-${space}
-        tenant-mode: dedicated
-  - name: purchase_Order_CAP-db
-    type: com.sap.xs.hdi-container
-    parameters:
-      service: hana
-      service-plan: hdi-shared

@@ -1,6 +1,63 @@
 {
-  "scopes": [],
-  "attributes": [],
-  "role-templates": [],
-  "authorities-inheritance": false
+  "scopes": [
+    {
+      "name": "uaa.User",
+      "description": "UAA"
+    },
+    {
+      "name": "$XSAPPNAME.Admin",
+      "description": "Admin Scope"
+    },
+    {
+      "name": "$XSAPPNAME.Manager",
+      "description": "Manager Scope"
+    }
+  ],
+  "role-templates": [
+    {
+      "name": "Token_Exchange",
+      "description": "UAA",
+      "scope-references": [
+        "uaa.User"
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Admin Role Template",
+      "scope-references": [
+        "$XSAPPNAME.Admin"
+      ]
+    },
+    {
+      "name": "Manager",
+      "description": "Manager Role Template",
+      "scope-references": [
+        "$XSAPPNAME.Manager"
+      ]
+    }
+  ],
+  "role-collections": [
+    {
+      "name": "RCEmployeeCAPAdmin",
+      "description": "Admin Can Create, Update, Delete The Data",
+      "role-template-references": [
+        "$XSAPPNAME.Admin"
+      ]
+    },
+    {
+      "name": "RC_EmployeeCAPUser",
+      "description": "User Can Read",
+      "role-template-references": [
+        "$XSAPPNAME.User"
+      ]
+    },
+    {
+      "name": "RC_EmployeeCAPManager",
+      "description": "User Can Read",
+      "role-template-references": [
+        "$XSAPPNAME.Manager"
+      ]
+    }
+  ],
+  "attributes": []
 }
