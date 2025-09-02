@@ -1,1 +1,2 @@
 ID,PurchaseOrder,CreatedByUser,PurchaseOrderDate,companyCode,PurchasingOrganization,PurchasingGroup,Material,MaterialType,MaterialGroup,Plant,StorageLocation
+1,PO12345,user1,2023-01-01,1000,2000,3000,MaterialA,Type1,Group1,Plant1,Location1
